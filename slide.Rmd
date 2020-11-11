@@ -1,42 +1,65 @@
 ---
 title: "midterm project"
 author: "Zhe Yu, Rong Li"
-date: March 5
+date: 11/11/2020
 output: 
   revealjs::revealjs_presentation:
     theme: serif
     transition: slide
     self_contained: false
     reveal_plugins: ["menu"]
+    center: false
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-pacman::p_load(usmap, dplyr, tidyverse, drat, hurricaneexposuredata, ggplot2, maps, tmap, leaflet, sf, sp, lubridate, readr, kableExtra, magrittr, gridExtra, knitr)
+knitr::opts_chunk$set(comment = "#>",
+  collapse = TRUE,
+  cache = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  dpi = 300,
+  cache.lazy = FALSE,
+  tidy = "styler",
+  out.width = "90%",
+  fig.align = "center",
+  fig.width = 10,
+  fig.height = 4)
+pacman::p_load(usmap, dplyr, tidyverse, drat, hurricaneexposuredata, ggplot2, maps, tmap, leaflet, sf, sp, lubridate, readr, kableExtra, magrittr, gridExtra, knitr,revealjs,knitr,png,grid)
+options(crayon.enabled = FALSE)
+
+  theme_set(theme_light())
 ```
 
 # Introduction
 
-In this assignment, we use additional county level data from FEMA to produce maps with more features. The purpose of this assignment is to show our ability of using R to produce documents, presentations, and shiny apps.  
+
+In this assignment, we use additional county level data from FEMA to produce maps with more features. The purpose of this assignment is to show our ability of using R to produce documents, presentations, and shiny apps.
 
 
-# Data Collection
+# Data Description
 
-## Data Description
 
-The Public Assistance Funded Projects Details dataset contains obligated (financial obligation to grantee) Public Assistance projects, lists public assistance recipients designated as applicants in the data, and a list of every funded, individual project, called project worksheets. Open projects still under pre-obligation processing are not represented. This is raw, unedited data from FEMA's National Emergency Management Information System (NEMIS). 
+The Public Assistance Funded Projects Details dataset contains obligated (financial obligation to grantee) Public Assistance projects, lists public assistance recipients designated as applicants in the data, and a list of every funded, individual project, called project worksheets. Open projects still under pre-obligation processing are not represented. This is raw, unedited data from FEMA's National Emergency Management Information System (NEMIS).
 
+
+ 
 ## Load Data
 
-- We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R.  
-Here are the first several rows and columns of the data:  
+<div style="font-size:16pt; font-weight: bold">
+
+- We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R. 
+Here are the first several rows and columns of the data:
+
 ```{r, message = FALSE, echo = FALSE}
 PAFPD <- read.csv("PublicAssistanceFundedProjectsDetails.csv",header = T)
 as.data.frame(PAFPD[1:5, 1:7])
 ```
-There are 79192 rows and 22 columns.  
+There are 79192 rows and 22 columns.
+
+
 
 - Obtain Hurricane Data from 2009 to 2018
+
 
 ```{r, echo = FALSE}
 PAFPD$beginyear <- year(PAFPD$declarationDate)
@@ -47,21 +70,36 @@ PAFPD_0918$fips <- 1000*PAFPD_0918$stateNumberCode+PAFPD_0918$countyCode
 PAFPD_0918 <- filter(PAFPD_0918,projectAmount>=0)
 as.data.frame(PAFPD_0918[1:5, 1:7])
 ```
+</div>
+
 
 # EDA
 
+
+
+-Total Project Amount for Each State
+
+-Total Project Amount for Each Year
+
+-Total Project Amount for Different Project Size
+
+-Total Project Amount for Different Damage Categories
+
+
+
 ## Total Project Amount for Each State
 
+<div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##barplot of the top 5 projectAmount in states
 statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount))
-kable(statesum[rev(order(statesum$sum))[1:10],])
 p1 <- ggplot(data = statesum[rev(order(statesum$sum))[1:10],], mapping = aes(x = state, y = sum, fill = state)) + 
   geom_bar(stat = "identity") + 
   guides(fill = F) + 
   ylab("sum of projectAmount") + 
   ggtitle("Barplot of the top 10 projectAmount in states") + 
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5))+
+  coord_flip()
 
 ##barplot of the other 22 projectAmount in states
 p2 <- ggplot(data = statesum[rev(order(statesum$sum))[11:27],], mapping = aes(x = state, y = sum, fill = state)) + 
@@ -74,13 +112,14 @@ p2 <- ggplot(data = statesum[rev(order(statesum$sum))[11:27],], mapping = aes(x 
 
 grid.arrange(p1,p2,nrow=1)
 ```
+</div>
 
 ## Total Project Amount for Each Year
 
+<div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##barplot of the top 2 projectAmount in years
 yearsum <- PAFPD_0918 %>% group_by(beginyear) %>% summarize(sum = sum(projectAmount))
-kable(yearsum[rev(order(yearsum$sum)),])
 p1 <- ggplot(data = yearsum[rev(order(yearsum$sum))[1:2],], mapping = aes(x = factor(beginyear), y = sum ,fill = factor(beginyear))) + 
   geom_bar(stat = "identity") + 
   guides(fill = F) + 
@@ -106,15 +145,15 @@ p3 <- ggplot(data = yearsum[rev(order(yearsum$sum))[6:8],], mapping = aes(x = fa
 
 grid.arrange(p1,p2,p3,nrow=1)
 ```
+<div>
 
 ## Total Project Amount for Different Project Size
 
+<div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##sum of projectAmount for different projectSize
 sizesum <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(sum = sum(projectAmount))
 sizecount <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(count = n(),.groups='drop')
-kable(sizesum)
-kable(sizecount)
 ##barplot of projectAmount for different projectSize
 p1 <- ggplot(data = sizesum, mapping = aes(x = factor(projectSize), y = sum, fill = factor(projectSize))) + 
   geom_bar(stat = "identity") + 
@@ -132,17 +171,17 @@ p2 <- ggplot(data = sizecount, mapping = aes(x = factor(projectSize), y = count,
   ggtitle("Barplot of count for different projectSize") + 
   theme(plot.title = element_text(hjust = 0.5))
 
-print(p1)
-print(p2)
+grid.arrange(p1,p2,nrow=1)
 
 ```
+<div>
 
 ## Total Project Amount for Different Damage Categories
 
+<div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##sum of projectAmount for different damageCategory
 dccsum <- PAFPD_0918 %>% group_by(dcc) %>% summarize(sum = sum(projectAmount))
-kable(dccsum[rev(order(dccsum$sum)),])
 ##Barplot of projectAmount for different damageCategory
 ggplot(data = dccsum, mapping = aes(x = dcc, y = sum, fill = dcc)) + 
   geom_bar(stat = "identity") + 
@@ -153,14 +192,18 @@ ggplot(data = dccsum, mapping = aes(x = dcc, y = sum, fill = dcc)) +
   ggtitle("Barplot of projectAmount for different damageCategory") + 
   theme(plot.title = element_text(hjust = 0.5))
 ```
+<div>
 
 # Mapping with 'Leaflet'
 
-## Combine Fips Code with Maps Data
+1. Combine Fips Code with Maps Data.
+
+2. Combine Maps Data with data we want to draw.
 
 ## Maps of States
 
-We draw the total cost of every state in map.  
+<div style="font-size:12pt">
+<p>We draw the total cost of every state in map.</p>  
 
 ```{r echo=FALSE, message=FALSE}
 #combine the fips with maps data
@@ -202,28 +245,27 @@ hcount_c2 <- filter(hcount_c,sumcost<200000000)
 hcount_c3 <- filter(hcount_c,sumcost>200000000)
 ```
 
+
 ```{r, echo = FALSE}
 #leaflet
 #state
-pal <- colorNumeric("YlOrRd",domain=hcount_s$sumcost)
-pop <- paste("State:",hcount_s$ID,"<br/>",
-             "estimated total cost:",hcount_s$sumcost,"$","<br/>")
-leaflet(hcount_s)%>%
-  addTiles()%>%
-  addPolygons(data = hcount_s,fillColor=~pal(hcount_s$sumcost), 
-              stroke = T,popup=pop,fillOpacity = 0.5,weight = 0.5,
-              color = "gray")%>%
-  addLegend("bottomright",values = ~sumcost,pal = pal,
-            title = "estimated total cost")
+img = readPNG("stateplot.png")
+grid.raster(img)
 ```
+
   
-As shown in the picture, hurricanes mainly influence the east coast. New York has the largest estimated total cost in 2009-2018.  
+<p>As shown in the picture, hurricanes mainly influence the east coast. New York has the largest estimated total cost in 2009-2018.</p>  
+
+[go to shiny app see more information.](https://yuzhe.shinyapps.io/MA615-midtermmap/)
+</div>
+
 
 ## Maps of Counties
 
+<div style="font-size:15pt">
+
 If we put the top 10 counties with the largest estimated total cost in the same graph with other counties, the differences among counties will be hard to find.  
 So we draw the top 10 counties alone and it appears that they are still hard to find in map because of their tiny area.  
-As a result, we simply list them as follows:  
 
 ```{r, echo = FALSE}
 rank10<-data.frame(county=1:10,funding=1:10)
@@ -231,26 +273,21 @@ rank10$county <- hcount_c3$ID
 rank10$funding <- hcount_c3$sumcost
 kable(rank10[order(rank10$funding,decreasing=T),])
 ```
-
-And the rest counties are drawn in this map:  
+</div>
+-----
+<div style="font-size:15pt">
+And the rest counties are drawn in this map: 
 
 ```{r, echo = FALSE}
-pal2 <- colorNumeric("YlOrRd",domain=hcount_c3$sumcost)
-pop2 <- paste("County:",hcount_c3$ID,"<br/>",
-              "estimated total cost:",hcount_c3$sumcost,"$","<br/>")
-pal3 <- colorNumeric("PuRd",domain=hcount_c2$sumcost)
-pop3 <- paste("County:",hcount_c2$ID,"<br/>",
-              "estimated total cost:",hcount_c2$sumcost,"$","<br/>")
-leaflet(hcount_c2)%>%
-  addTiles()%>%
-  addPolygons(data = hcount_c2,fillColor=~pal3(hcount_c2$sumcost), 
-              stroke = T,popup=pop2,fillOpacity = 0.7,weight = 0.5,
-              color = "gray")%>%
-  addLegend("bottomright",values = ~sumcost,pal = pal3,
-            title = "estimated total cost")
-
+img = readPNG("countyplot.png")
+grid.raster(img)
 ```
+[go to shiny app see more information.](https://yuzhe.shinyapps.io/MA615-midtermmap/)
+</div>
 
 # Shiny
 
-[Click here to shiny app](https://yuzhe.shinyapps.io/MA615-midtermmap/) 
+
+
+[Click here to shiny app](https://yuzhe.shinyapps.io/MA615-midtermmap/)
+

@@ -27,7 +27,7 @@ We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fe
 Here are the first several rows and columns of the data:  
 ```{r, message = FALSE, echo = FALSE}
 PAFPD <- read_csv("PublicAssistanceFundedProjectsDetails.csv")
-as.data.frame(PAFPD[1:5, 1:7])
+as.data.frame(PAFPD[1:5, 1:5])
 ```
 There are 79192 rows and 22 columns.  
 
@@ -42,7 +42,7 @@ PAFPD_0918$stateNumberCode <- as.numeric(PAFPD_0918$stateNumberCode)
 PAFPD_0918$countyCode <- as.numeric(PAFPD_0918$countyCode)
 PAFPD_0918$fips <- 1000*PAFPD_0918$stateNumberCode+PAFPD_0918$countyCode
 PAFPD_0918 <- filter(PAFPD_0918,projectAmount>=0)
-as.data.frame(PAFPD_0918[1:5, 1:7])
+as.data.frame(PAFPD_0918[1:5, 1:5])
 ```
 
 # EDA
@@ -100,7 +100,7 @@ kable(yearsum[rev(order(yearsum$sum)),])
 ```
 
 ### Barplot
-Because the top 2 projectAmounts are too large, they are ploted in one graph. And the others are in another plot.  
+Because the top 2 projectAmounts are too large, they are ploted in one graph. And the No.3-No.5 projectAmounts are in another plot for the same reason. The third plot contains the rest of projectAmounts. 
 
 ```{r, echo = FALSE}
 ##barplot of the top 2 projectAmount in years
@@ -109,22 +109,23 @@ p1 <- ggplot(data = yearsum[rev(order(yearsum$sum))[1:2],], mapping = aes(x = fa
   guides(fill = F) + 
   xlab("year") + 
   ylab("sum of projectAmount") + 
-  ggtitle("Barplot of the top 2 projectAmount in years") + 
+  ggtitle("Top 2 projectAmount") + 
   theme(plot.title = element_text(hjust = 0.5))
-##barplot of the other projectAmount in years
+##barplot of No.3-No.5
 p2 <- ggplot(data = yearsum[rev(order(yearsum$sum))[3:5],], mapping = aes(x = factor(beginyear), y = sum, fill = factor(beginyear))) + 
   geom_bar(stat = "identity") + 
   guides(fill = F) + 
   xlab("year") + 
   ylab("sum of projectAmount") + 
-  ggtitle("Barplot of the No.3-No.5 for each year") + 
+  ggtitle("No.3-No.5 projectAmount") + 
   theme(plot.title = element_text(hjust = 0.5))
+##barplot of the other
 p3 <- ggplot(data = yearsum[rev(order(yearsum$sum))[6:8],], mapping = aes(x = factor(beginyear), y = sum, fill = factor(beginyear))) + 
   geom_bar(stat = "identity") + 
   guides(fill = F) + 
   xlab("year") + 
   ylab("sum of projectAmount") + 
-  ggtitle("Barplot of the other projectAmount for each year") + 
+  ggtitle("The other projectAmount") + 
   theme(plot.title = element_text(hjust = 0.5))
 
 grid.arrange(p1,p2,p3,nrow=1)
@@ -134,7 +135,7 @@ grid.arrange(p1,p2,p3,nrow=1)
 
 ### Table
 
-We calculate the total project amount for each year.  
+We calculate the total project amount for different project sizes.  
 
 ```{r, echo = FALSE, message = FALSE}
 ##sum of projectAmount for different projectSize
@@ -277,16 +278,14 @@ kable(rank10[order(rank10$funding,decreasing=T),])
 And the rest counties are drawn in this map:  
 
 ```{r, echo = FALSE}
-pal2 <- colorNumeric("YlOrRd",domain=hcount_c3$sumcost)
-pop2 <- paste("County:",hcount_c3$ID,"<br/>",
-              "estimated total cost:",hcount_c3$sumcost,"$","<br/>")
-pal3 <- colorNumeric("PuRd",domain=hcount_c2$sumcost)
+
+pal3 <- colorNumeric("YlOrRd",domain=hcount_c2$sumcost)
 pop3 <- paste("County:",hcount_c2$ID,"<br/>",
               "estimated total cost:",hcount_c2$sumcost,"$","<br/>")
 leaflet(hcount_c2)%>%
   addTiles()%>%
   addPolygons(data = hcount_c2,fillColor=~pal3(hcount_c2$sumcost), 
-              stroke = T,popup=pop2,fillOpacity = 0.7,weight = 0.5,
+              stroke = T,popup=pop3,fillOpacity = 0.7,weight = 0.5,
               color = "gray")%>%
   addLegend("bottomright",values = ~sumcost,pal = pal3,
             title = "estimated total cost")
@@ -298,7 +297,7 @@ leaflet(hcount_c2)%>%
 
 In shiny we not only display the 'projectAmount', but also show the number of hurricanes from 2009 to 2018.     
 - You can choose from the sidebar to see the mapping or graphs.      
-- Mapping are displayed in two scale:county level and state level. Buttons are at the topeleft of mapping box.       
+- Mapping are displayed in two scale:county level and state level. Buttons are at the topleft of mapping box.       
 - In Control box you can choose which period and which state to display.       
 - Some graphs also provide slide bar to choose period or certain year.     
 
