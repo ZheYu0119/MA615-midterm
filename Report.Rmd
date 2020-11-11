@@ -2,7 +2,9 @@
 title: "Report"
 author: "Zhe Yu, Rong Li"
 date: "2020/11/11"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -24,30 +26,19 @@ The Public Assistance Funded Projects Details dataset contains obligated (financ
 ## Load Data
 
 We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R.  
-Here are the first several rows and columns of the data:  
-```{r, message = FALSE, echo = FALSE}
-PAFPD <- read_csv("PublicAssistanceFundedProjectsDetails.csv")
-as.data.frame(PAFPD[1:5, 1:5])
-```
-There are 79192 rows and 22 columns.  
 
 ## Obtain Hurricane Data from 2009 to 2018 
 
 After selecting hurricane data from 2009 to 2018 and deleting the missing data, we get 79171 observations.  
 Here are the first several rows and columns of the data:  
-```{r, echo = FALSE}
-PAFPD$beginyear <- year(PAFPD$declarationDate)
-PAFPD_0918 <- filter(PAFPD,beginyear > 2008 & beginyear < 2019 & incidentType == "Hurricane")
-PAFPD_0918$stateNumberCode <- as.numeric(PAFPD_0918$stateNumberCode)
-PAFPD_0918$countyCode <- as.numeric(PAFPD_0918$countyCode)
-PAFPD_0918$fips <- 1000*PAFPD_0918$stateNumberCode+PAFPD_0918$countyCode
-PAFPD_0918 <- filter(PAFPD_0918,projectAmount>=0)
+```{r echo=FALSE,warning=FALSE}
+PAFPD_0918 <- read.csv("PAFPD_0918.csv",header = T)
 as.data.frame(PAFPD_0918[1:5, 1:5])
 ```
 
 # EDA
 
-In this part, we focus on column **projectAmount** -- the estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey.  
+In this part, we focus on column `projectAmount` -- the estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey.  
 We calculate the total project amount for each state, each year, different project sizes and different damage categories and display it using barplot.  
 
 ## Total Project Amount for Each State
