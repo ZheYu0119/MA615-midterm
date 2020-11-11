@@ -1,0 +1,13 @@
+name: MA615-midtermmap
+title: MA615-midtermmap
+username:
+account: yuzhe
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3208869
+bundleId: 3847113
+url: https://yuzhe.shinyapps.io/MA615-midtermmap/
+when: 1605097041.73075
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: DisasterDeclarationsSummaries.csv|PublicAssistanceFundedProjectsDetails.csv

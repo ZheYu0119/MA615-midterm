@@ -1,0 +1,13 @@
+name: MA615-MAPPING
+title: MA615-MAPPING
+username:
+account: yuzhe
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3208699
+bundleId: 3846884
+url: https://yuzhe.shinyapps.io/MA615-MAPPING/
+when: 1605090236.87339
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: DisasterDeclarationsSummaries.csv|PublicAssistanceFundedProjectsDetails.csv

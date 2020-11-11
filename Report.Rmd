@@ -1,0 +1,332 @@
+---
+title: "Report"
+author: "Zhe Yu, Rong Li"
+date: "2020/11/11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(usmap, dplyr, tidyverse, drat, hurricaneexposuredata, ggplot2, maps, tmap, leaflet, sf, sp, lubridate, readr, kableExtra, magrittr, gridExtra, knitr)
+```
+
+# Introduction
+
+In this assignment, we use additional county level data from FEMA to produce maps with more features. The purpose of this assignment is to show our ability of using R to produce documents, presentations, and shiny apps.  
+
+
+# Data Collection
+
+## Data Description
+
+The Public Assistance Funded Projects Details dataset contains obligated (financial obligation to grantee) Public Assistance projects, lists public assistance recipients designated as applicants in the data, and a list of every funded, individual project, called project worksheets. Open projects still under pre-obligation processing are not represented. This is raw, unedited data from FEMA's National Emergency Management Information System (NEMIS).   
+
+## Load Data
+
+We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R.  
+Here are the first several rows and columns of the data:  
+```{r, message = FALSE, echo = FALSE}
+PAFPD <- read_csv("PublicAssistanceFundedProjectsDetails.csv")
+as.data.frame(PAFPD[1:5, 1:7])
+```
+There are 79192 rows and 22 columns.  
+
+## Obtain Hurricane Data from 2009 to 2018 
+
+After selecting hurricane data from 2009 to 2018 and deleting the missing data, we get 79171 observations.  
+Here are the first several rows and columns of the data:  
+```{r, echo = FALSE}
+PAFPD$beginyear <- year(PAFPD$declarationDate)
+PAFPD_0918 <- filter(PAFPD,beginyear > 2008 & beginyear < 2019 & incidentType == "Hurricane")
+PAFPD_0918$stateNumberCode <- as.numeric(PAFPD_0918$stateNumberCode)
+PAFPD_0918$countyCode <- as.numeric(PAFPD_0918$countyCode)
+PAFPD_0918$fips <- 1000*PAFPD_0918$stateNumberCode+PAFPD_0918$countyCode
+PAFPD_0918 <- filter(PAFPD_0918,projectAmount>=0)
+as.data.frame(PAFPD_0918[1:5, 1:7])
+```
+
+# EDA
+
+In this part, we focus on column **projectAmount** -- the estimated total cost of the Public Assistance grant project in dollars, without administrative costs. This amount is based on the damage survey.  
+We calculate the total project amount for each state, each year, different project sizes and different damage categories and display it using barplot.  
+
+## Total Project Amount for Each State
+
+### Table
+
+We calculate the total project amount for each state. Only 10 states with the largest number of project amount are shown. The whole table is available in [Appendix](#state).  
+
+```{r, echo = FALSE, message = FALSE}
+## total projectAmount for each state
+statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount))
+kable(statesum[rev(order(statesum$sum))[1:10],])
+```
+
+### Barplot
+Because the top 10 projectAmounts are too large, they are ploted in one graph. And the others are in another plot.  
+
+```{r, echo = FALSE}
+##barplot of the top 10 projectAmount in states
+p1 <- ggplot(data = statesum[rev(order(statesum$sum))[1:10],], mapping = aes(x = state, y = sum, fill = state)) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of the top 10 projectAmount in states") + 
+  theme(plot.title = element_text(hjust = 0.5))+coord_flip()
+
+##barplot of the other 22 projectAmount in states
+p2 <- ggplot(data = statesum[rev(order(statesum$sum))[11:27],], mapping = aes(x = state, y = sum, fill = state)) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  coord_flip() + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of projectAmount for other states") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(p1)
+print(p2)
+```
+
+## Total Project Amount for Each Year
+
+### Table
+
+We calculate the total project amount for each year.    
+
+```{r, echo = FALSE, message = FALSE}
+## total projectAmount for each state
+yearsum <- PAFPD_0918 %>% group_by(beginyear) %>% summarize(sum = sum(projectAmount))
+kable(yearsum[rev(order(yearsum$sum)),])
+```
+
+### Barplot
+Because the top 2 projectAmounts are too large, they are ploted in one graph. And the others are in another plot.  
+
+```{r, echo = FALSE}
+##barplot of the top 2 projectAmount in years
+p1 <- ggplot(data = yearsum[rev(order(yearsum$sum))[1:2],], mapping = aes(x = factor(beginyear), y = sum ,fill = factor(beginyear))) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  xlab("year") + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of the top 2 projectAmount in years") + 
+  theme(plot.title = element_text(hjust = 0.5))
+##barplot of the other projectAmount in years
+p2 <- ggplot(data = yearsum[rev(order(yearsum$sum))[3:5],], mapping = aes(x = factor(beginyear), y = sum, fill = factor(beginyear))) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  xlab("year") + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of the No.3-No.5 for each year") + 
+  theme(plot.title = element_text(hjust = 0.5))
+p3 <- ggplot(data = yearsum[rev(order(yearsum$sum))[6:8],], mapping = aes(x = factor(beginyear), y = sum, fill = factor(beginyear))) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  xlab("year") + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of the other projectAmount for each year") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(p1,p2,p3,nrow=1)
+```
+
+## Total Project Amount for Different Project Size
+
+### Table
+
+We calculate the total project amount for each year.  
+
+```{r, echo = FALSE, message = FALSE}
+##sum of projectAmount for different projectSize
+sizesum <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(sum = sum(projectAmount))
+sizecount <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(count = n(),.groups='drop')
+kable(sizesum)
+kable(sizecount)
+```
+
+### Barplot
+```{r, echo = FALSE}
+##barplot of projectAmount for different projectSize
+p1 <- ggplot(data = sizesum, mapping = aes(x = factor(projectSize), y = sum, fill = factor(projectSize))) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  xlab("projectSize") + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of projectAmount for different projectSize") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(data = sizecount, mapping = aes(x = factor(projectSize), y = count, fill = factor(projectSize))) + 
+  geom_bar(stat = "identity") + 
+  guides(fill = F) + 
+  xlab("projectSize") + 
+  ylab("count of projectAmount") + 
+  ggtitle("Barplot of count for different projectSize") + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(p1)
+print(p2)
+
+```
+
+## Total Project Amount for Different Damage Categories
+
+### Table
+
+We calculate the total project amount for different damage categories.  
+
+```{r, echo = FALSE, message = FALSE}
+##sum of projectAmount for different damageCategory
+dccsum <- PAFPD_0918 %>% group_by(dcc) %>% summarize(sum = sum(projectAmount))
+kable(dccsum[rev(order(dccsum$sum)),])
+```
+
+### Barplot
+```{r, echo = FALSE}
+##Barplot of projectAmount for different damageCategory
+ggplot(data = dccsum, mapping = aes(x = dcc, y = sum, fill = dcc)) + 
+  geom_bar(stat = "identity") + 
+  guides(fill=guide_legend(title=NULL)) + 
+  scale_fill_discrete(labels=c("A-Debris Utilities", "B-Protective Measures", "C-Roads and Bridges", "D-Water Control Facilities", "E-Public Buildings", "F-Public Utilities", "G-Recreational or Other", "Z-State Management")) + 
+  xlab("damageCatrgory") + 
+  ylab("sum of projectAmount") + 
+  ggtitle("Barplot of projectAmount for different damageCategory") + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+  
+
+# Mapping with 'leaflet'
+
+In this part, we draw maps to show the estimated total cost in states and counties.  
+
+## Combine Fips Code with Maps Data
+
+```{r, message = FALSE}
+#combine the fips with maps data
+##county
+data(county.fips)
+mapcounty=st_as_sf(map('county',plot=F,fill=T))
+colnames(county.fips)[2]=colnames(mapcounty)[1]
+mapcounty=left_join(mapcounty,county.fips,'ID')
+
+##state
+data(state.fips)
+mapstate=st_as_sf(map('state',plot = F,fill = T))
+colnames(state.fips)[6]=colnames(mapstate)[1]
+mapstate=left_join(mapstate,state.fips,'ID')
+mapstate[20,2:6]<-c(25,22,1,1,"MA")
+mapstate[21,2:6]<-c(26,23,2,3,"MI")
+mapstate[31,2:6]<-c(36,33,1,2,"NY")
+mapstate[32,2:6]<-c(37,34,3,5,"NC")
+mapstate[45,2:6]<-c(51,49,3,5,"VA")
+mapstate[46,2:6]<-c(53,50,4,9,"WA")
+colnames(mapstate)[2] <- "stateNumberCode"
+mapstate$stateNumberCode<- as.numeric(mapstate$stateNumberCode)
+
+#combine data
+#by state
+hurricane_group<- group_by(PAFPD_0918, stateNumberCode)
+h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount))
+h_GroupByfips<- h_GroupByfips[order(h_GroupByfips$sumcost,decreasing=F),]
+hcount_s <- right_join(mapstate,h_GroupByfips,"stateNumberCode")
+
+#by county
+hurricane_group <- filter(PAFPD_0918,countyCode!=0)
+hurricane_group<- group_by(hurricane_group, fips)
+h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount))
+h_GroupByfips<- h_GroupByfips[order(h_GroupByfips$sumcost,decreasing=F),]
+hcount_c <- right_join(mapcounty,h_GroupByfips,"fips")
+hcount_c <- filter(hcount_c,is.na(ID)==F)
+hcount_c2 <- filter(hcount_c,sumcost<200000000)
+hcount_c3 <- filter(hcount_c,sumcost>200000000)
+```
+
+## Maps of States
+
+We draw the total cost of every state in map.  
+
+```{r, echo = FALSE}
+#leaflet
+#state
+pal <- colorNumeric("YlOrRd",domain=hcount_s$sumcost)
+pop <- paste("State:",hcount_s$ID,"<br/>",
+             "estimated total cost:",hcount_s$sumcost,"$","<br/>")
+leaflet(hcount_s)%>%
+  addTiles()%>%
+  addPolygons(data = hcount_s,fillColor=~pal(hcount_s$sumcost), 
+              stroke = T,popup=pop,fillOpacity = 0.5,weight = 0.5,
+              color = "gray")%>%
+  addLegend("bottomright",values = ~sumcost,pal = pal,
+            title = "estimated total cost")
+```
+  
+As shown in the picture, hurricanes mainly influence the east coast. New York has the largest estimated total cost in 2009-2018.  
+
+## Maps of Counties
+
+If we put the top 10 counties with the largest estimated total cost in the same graph with other counties, the differences among counties will be hard to find.  
+So we draw the top 10 counties alone and it appears that they are still hard to find in map because of their tiny area.  
+As a result, we simply list them as follows:  
+
+```{r, echo = FALSE}
+rank10<-data.frame(county=1:10,funding=1:10)
+rank10$county <- hcount_c3$ID
+rank10$funding <- hcount_c3$sumcost
+kable(rank10[order(rank10$funding,decreasing=T),])
+```
+
+And the rest counties are drawn in this map:  
+
+```{r, echo = FALSE}
+pal2 <- colorNumeric("YlOrRd",domain=hcount_c3$sumcost)
+pop2 <- paste("County:",hcount_c3$ID,"<br/>",
+              "estimated total cost:",hcount_c3$sumcost,"$","<br/>")
+pal3 <- colorNumeric("PuRd",domain=hcount_c2$sumcost)
+pop3 <- paste("County:",hcount_c2$ID,"<br/>",
+              "estimated total cost:",hcount_c2$sumcost,"$","<br/>")
+leaflet(hcount_c2)%>%
+  addTiles()%>%
+  addPolygons(data = hcount_c2,fillColor=~pal3(hcount_c2$sumcost), 
+              stroke = T,popup=pop2,fillOpacity = 0.7,weight = 0.5,
+              color = "gray")%>%
+  addLegend("bottomright",values = ~sumcost,pal = pal3,
+            title = "estimated total cost")
+
+```
+
+
+# Shiny
+
+In shiny we not only display the 'projectAmount', but also show the number of hurricanes from 2009 to 2018.     
+- You can choose from the sidebar to see the mapping or graphs.      
+- Mapping are displayed in two scale:county level and state level. Buttons are at the topeleft of mapping box.       
+- In Control box you can choose which period and which state to display.       
+- Some graphs also provide slide bar to choose period or certain year.     
+
+[Click here go to shiny app](https://yuzhe.shinyapps.io/MA615-midtermmap/)
+
+# Appendix
+## Total Project Amount for Each State {#state}
+```{r, echo = FALSE, message = FALSE}
+## total projectAmount for each state
+statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount))
+as.data.frame(statesum[rev(order(statesum$sum)),])
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
