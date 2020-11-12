@@ -86,7 +86,7 @@ head(PAFPD_0918,5)
 <div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##barplot of the top 5 projectAmount in states
-statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount))
+statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount),.groups='drop')
 p1 <- ggplot(data = statesum[rev(order(statesum$sum))[1:10],], mapping = aes(x = state, y = sum, fill = state)) + 
   geom_bar(stat = "identity") + 
   guides(fill = F) + 
@@ -113,7 +113,7 @@ grid.arrange(p1,p2,nrow=1)
 <div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##barplot of the top 2 projectAmount in years
-yearsum <- PAFPD_0918 %>% group_by(beginyear) %>% summarize(sum = sum(projectAmount))
+yearsum <- PAFPD_0918 %>% group_by(beginyear) %>% summarize(sum = sum(projectAmount),.groups='drop')
 p1 <- ggplot(data = yearsum[rev(order(yearsum$sum))[1:2],], mapping = aes(x = factor(beginyear), y = sum ,fill = factor(beginyear))) + 
   geom_bar(stat = "identity") + 
   guides(fill = F) + 
@@ -146,7 +146,7 @@ grid.arrange(p1,p2,p3,nrow=1)
 <div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##sum of projectAmount for different projectSize
-sizesum <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(sum = sum(projectAmount))
+sizesum <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(sum = sum(projectAmount),.groups='drop')
 sizecount <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(count = n(),.groups='drop')
 ##barplot of projectAmount for different projectSize
 p1 <- ggplot(data = sizesum, mapping = aes(x = factor(projectSize), y = sum, fill = factor(projectSize))) + 
@@ -175,7 +175,7 @@ grid.arrange(p1,p2,nrow=1)
 <div style="font-size:10pt; font-weight: bold">
 ```{r, echo = FALSE}
 ##sum of projectAmount for different damageCategory
-dccsum <- PAFPD_0918 %>% group_by(dcc) %>% summarize(sum = sum(projectAmount))
+dccsum <- PAFPD_0918 %>% group_by(dcc) %>% summarize(sum = sum(projectAmount),.groups='drop')
 ##Barplot of projectAmount for different damageCategory
 ggplot(data = dccsum, mapping = aes(x = dcc, y = sum, fill = dcc)) + 
   geom_bar(stat = "identity") + 
@@ -224,14 +224,14 @@ mapstate$stateNumberCode<- as.numeric(mapstate$stateNumberCode)
 #combine data
 #by state
 hurricane_group<- group_by(PAFPD_0918, stateNumberCode)
-h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount))
+h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount),.groups='drop')
 h_GroupByfips<- h_GroupByfips[order(h_GroupByfips$sumcost,decreasing=F),]
 hcount_s <- right_join(mapstate,h_GroupByfips,"stateNumberCode")
 
 #by county
 hurricane_group <- filter(PAFPD_0918,countyCode!=0)
 hurricane_group<- group_by(hurricane_group, fips)
-h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount))
+h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount),.groups='drop')
 h_GroupByfips<- h_GroupByfips[order(h_GroupByfips$sumcost,decreasing=F),]
 hcount_c <- right_join(mapcounty,h_GroupByfips,"fips")
 hcount_c <- filter(hcount_c,is.na(ID)==F)
