@@ -36,6 +36,7 @@ options(crayon.enabled = FALSE)
 In this assignment, we use additional county level data from FEMA to produce maps with more features. The purpose of this assignment is to show our ability of using R to produce documents, presentations, and shiny apps.
 
 
+
 # Data Description
 
 
@@ -45,45 +46,38 @@ The Public Assistance Funded Projects Details dataset contains obligated (financ
  
 ## Load Data
 
-<div style="font-size:16pt; font-weight: bold">
+
 
 - We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R. 
-Here are the first several rows and columns of the data:
 
 ```{r, message = FALSE, echo = FALSE}
-PAFPD <- read.csv("PublicAssistanceFundedProjectsDetails.csv",header = T)
-as.data.frame(PAFPD[1:5, 1:7])
+img <- readPNG("dataset.png")
+grid.raster(img)
 ```
+
 There are 79192 rows and 22 columns.
 
-
+## Clean Data
 
 - Obtain Hurricane Data from 2009 to 2018
 
 
 ```{r, echo = FALSE}
-PAFPD$beginyear <- year(PAFPD$declarationDate)
-PAFPD_0918 <- filter(PAFPD,beginyear > 2008 & beginyear < 2019 & incidentType == "Hurricane")
-PAFPD_0918$stateNumberCode <- as.numeric(PAFPD_0918$stateNumberCode)
-PAFPD_0918$countyCode <- as.numeric(PAFPD_0918$countyCode)
-PAFPD_0918$fips <- 1000*PAFPD_0918$stateNumberCode+PAFPD_0918$countyCode
-PAFPD_0918 <- filter(PAFPD_0918,projectAmount>=0)
-as.data.frame(PAFPD_0918[1:5, 1:7])
+PAFPD_0918 <- read.csv("PAFPD_0918.CSV",header = T)
+head(PAFPD_0918,5)
 ```
-</div>
+
 
 
 # EDA
 
+- Total Project Amount for Each State
 
+- Total Project Amount for Each Year
 
--Total Project Amount for Each State
+- Total Project Amount for Different Project Size
 
--Total Project Amount for Each Year
-
--Total Project Amount for Different Project Size
-
--Total Project Amount for Different Damage Categories
+- Total Project Amount for Different Damage Categories
 
 
 
@@ -202,7 +196,7 @@ ggplot(data = dccsum, mapping = aes(x = dcc, y = sum, fill = dcc)) +
 
 ## Maps of States
 
-<div style="font-size:12pt">
+<div style="font-size:18pt">
 <p>We draw the total cost of every state in map.</p>  
 
 ```{r echo=FALSE, message=FALSE}
@@ -262,7 +256,7 @@ grid.raster(img)
 
 ## Maps of Counties
 
-<div style="font-size:15pt">
+<div style="font-size:20pt">
 
 If we put the top 10 counties with the largest estimated total cost in the same graph with other counties, the differences among counties will be hard to find.  
 So we draw the top 10 counties alone and it appears that they are still hard to find in map because of their tiny area.  
@@ -275,7 +269,7 @@ kable(rank10[order(rank10$funding,decreasing=T),])
 ```
 </div>
 -----
-<div style="font-size:15pt">
+<div style="font-size:20pt">
 And the rest counties are drawn in this map: 
 
 ```{r, echo = FALSE}

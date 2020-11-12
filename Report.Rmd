@@ -9,7 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-pacman::p_load(usmap, dplyr, tidyverse, drat, hurricaneexposuredata, ggplot2, maps, tmap, leaflet, sf, sp, lubridate, readr, kableExtra, magrittr, gridExtra, knitr)
+pacman::p_load(usmap, dplyr, tidyverse, drat, hurricaneexposuredata, ggplot2, maps, tmap, leaflet, sf, sp, lubridate, readr, kableExtra, magrittr, gridExtra, knitr, png, grid)
 ```
 
 # Introduction
@@ -25,12 +25,20 @@ The Public Assistance Funded Projects Details dataset contains obligated (financ
 
 ## Load Data
 
-We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R.  
+We download raw data [PublicAssistanceFundedProjectsDetails.csv]( https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1) from the website of FEMA and load into R. 
+
+```{r, message = FALSE, echo = FALSE}
+img <- readPNG("dataset.png")
+grid.raster(img)
+```
+
+  There are 79192 rows and 22 columns.
 
 ## Obtain Hurricane Data from 2009 to 2018 
 
 After selecting hurricane data from 2009 to 2018 and deleting the missing data, we get 79171 observations.  
 Here are the first several rows and columns of the data:  
+
 ```{r echo=FALSE,warning=FALSE}
 PAFPD_0918 <- read.csv("PAFPD_0918.csv",header = T)
 as.data.frame(PAFPD_0918[1:5, 1:5])
@@ -49,7 +57,7 @@ We calculate the total project amount for each state. Only 10 states with the la
 
 ```{r, echo = FALSE, message = FALSE}
 ## total projectAmount for each state
-statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount))
+statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount),.groups='drop')
 kable(statesum[rev(order(statesum$sum))[1:10],])
 ```
 
@@ -86,7 +94,7 @@ We calculate the total project amount for each year.
 
 ```{r, echo = FALSE, message = FALSE}
 ## total projectAmount for each state
-yearsum <- PAFPD_0918 %>% group_by(beginyear) %>% summarize(sum = sum(projectAmount))
+yearsum <- PAFPD_0918 %>% group_by(beginyear) %>% summarize(sum = sum(projectAmount),.groups='drop')
 kable(yearsum[rev(order(yearsum$sum)),])
 ```
 
@@ -130,7 +138,7 @@ We calculate the total project amount for different project sizes.
 
 ```{r, echo = FALSE, message = FALSE}
 ##sum of projectAmount for different projectSize
-sizesum <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(sum = sum(projectAmount))
+sizesum <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(sum = sum(projectAmount),.groups='drop')
 sizecount <- PAFPD_0918 %>% group_by(projectSize) %>% summarize(count = n(),.groups='drop')
 kable(sizesum)
 kable(sizecount)
@@ -168,7 +176,7 @@ We calculate the total project amount for different damage categories.
 
 ```{r, echo = FALSE, message = FALSE}
 ##sum of projectAmount for different damageCategory
-dccsum <- PAFPD_0918 %>% group_by(dcc) %>% summarize(sum = sum(projectAmount))
+dccsum <- PAFPD_0918 %>% group_by(dcc) %>% summarize(sum = sum(projectAmount),.groups='drop')
 kable(dccsum[rev(order(dccsum$sum)),])
 ```
 
@@ -217,14 +225,14 @@ mapstate$stateNumberCode<- as.numeric(mapstate$stateNumberCode)
 #combine data
 #by state
 hurricane_group<- group_by(PAFPD_0918, stateNumberCode)
-h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount))
+h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount),.groups='drop')
 h_GroupByfips<- h_GroupByfips[order(h_GroupByfips$sumcost,decreasing=F),]
 hcount_s <- right_join(mapstate,h_GroupByfips,"stateNumberCode")
 
 #by county
 hurricane_group <- filter(PAFPD_0918,countyCode!=0)
 hurricane_group<- group_by(hurricane_group, fips)
-h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount))
+h_GroupByfips<- summarise(hurricane_group,sumcost = sum(projectAmount),.groups='drop')
 h_GroupByfips<- h_GroupByfips[order(h_GroupByfips$sumcost,decreasing=F),]
 hcount_c <- right_join(mapcounty,h_GroupByfips,"fips")
 hcount_c <- filter(hcount_c,is.na(ID)==F)
@@ -298,7 +306,7 @@ In shiny we not only display the 'projectAmount', but also show the number of hu
 ## Total Project Amount for Each State {#state}
 ```{r, echo = FALSE, message = FALSE}
 ## total projectAmount for each state
-statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount))
+statesum <- PAFPD_0918 %>% group_by(state) %>% summarize(sum = sum(projectAmount),.groups='drop')
 as.data.frame(statesum[rev(order(statesum$sum)),])
 ```
 

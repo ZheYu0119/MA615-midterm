@@ -460,44 +460,59 @@ document.getElementsByTagName('head')[0].appendChild(style);
 <section id="introduction" class="title-slide slide level1"><h1>Introduction</h1><p>In this assignment, we use additional county level data from FEMA to produce maps with more features. The purpose of this assignment is to show our ability of using R to produce documents, presentations, and shiny apps.</p></section>
 <section><section id="data-description" class="title-slide slide level1"><h1>Data Description</h1><p>The Public Assistance Funded Projects Details dataset contains obligated (financial obligation to grantee) Public Assistance projects, lists public assistance recipients designated as applicants in the data, and a list of every funded, individual project, called project worksheets. Open projects still under pre-obligation processing are not represented. This is raw, unedited data from FEMA’s National Emergency Management Information System (NEMIS).</p></section><section id="load-data" class="slide level2">
 <h2>Load Data</h2>
-<div style="font-size:16pt; font-weight: bold">
 <ul>
-<li>We download raw data <a href="https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1">PublicAssistanceFundedProjectsDetails.csv</a> from the website of FEMA and load into R. Here are the first several rows and columns of the data:</li>
+<li>We download raw data <a href="https://www.fema.gov/openfema-data-page/public-assistance-funded-projects-details-v1">PublicAssistanceFundedProjectsDetails.csv</a> from the website of FEMA and load into R.</li>
 </ul>
-<pre><code>#&gt;   disasterNumber          declarationDate    incidentType pwNumber
-#&gt; 1           1239 1998-08-26T04:00:00.000Z Severe Storm(s)       41
-#&gt; 2           1239 1998-08-26T04:00:00.000Z Severe Storm(s)       51
-#&gt; 3           1239 1998-08-26T04:00:00.000Z Severe Storm(s)       43
-#&gt; 4           1239 1998-08-26T04:00:00.000Z Severe Storm(s)        2
-#&gt; 5           1239 1998-08-26T04:00:00.000Z Severe Storm(s)       47
-#&gt;   applicationTitle  applicantId    damageCategoryCode
-#&gt; 1     Not Provided 463-99463-00 C - Roads and Bridges
-#&gt; 2     Not Provided 463-99463-00 C - Roads and Bridges
-#&gt; 3     Not Provided 463-99463-00 C - Roads and Bridges
-#&gt; 4              (L) 465-19792-01  F - Public Utilities
-#&gt; 5     Not Provided 463-99463-00 C - Roads and Bridges</code></pre>
+<p><img src="slide_files/figure-revealjs/unnamed-chunk-1-1.png" width="90%" style="display: block; margin: auto;" /></p>
 <p>There are 79192 rows and 22 columns.</p>
+</section><section id="clean-data" class="slide level2">
+<h2>Clean Data</h2>
 <ul>
 <li>Obtain Hurricane Data from 2009 to 2018</li>
 </ul>
-<pre><code>#&gt;   disasterNumber          declarationDate incidentType pwNumber
-#&gt; 1           1866 2009-12-22T05:00:00.000Z    Hurricane        1
-#&gt; 2           1866 2009-12-22T05:00:00.000Z    Hurricane        2
-#&gt; 3           1866 2009-12-22T05:00:00.000Z    Hurricane        3
-#&gt; 4           1866 2009-12-22T05:00:00.000Z    Hurricane        4
-#&gt; 5           1866 2009-12-22T05:00:00.000Z    Hurricane        5
-#&gt;   applicationTitle  applicantId      damageCategoryCode
-#&gt; 1      DIW-097-02F 097-U15P3-00    F - Public Utilities
-#&gt; 2      DIW-097-01F 097-U15P3-00    F - Public Utilities
-#&gt; 3      DIW-097-03F 097-U15P3-00    F - Public Utilities
-#&gt; 4      DIW-097-04F 097-U15P3-00    F - Public Utilities
-#&gt; 5      DIW-097-01B 097-U15P3-00 B - Protective Measures</code></pre>
-</div>
+<pre><code>#&gt;   disasterNumber     declarationDate incidentType pwNumber applicationTitle
+#&gt; 1           1866 2009-12-22 05:00:00    Hurricane        1      DIW-097-02F
+#&gt; 2           1866 2009-12-22 05:00:00    Hurricane        2      DIW-097-01F
+#&gt; 3           1866 2009-12-22 05:00:00    Hurricane        3      DIW-097-03F
+#&gt; 4           1866 2009-12-22 05:00:00    Hurricane        4      DIW-097-04F
+#&gt; 5           1866 2009-12-22 05:00:00    Hurricane        5      DIW-097-01B
+#&gt;    applicantId      damageCategoryCode dcc      damageCategory projectSize
+#&gt; 1 097-U15P3-00    F - Public Utilities   F    Public Utilities       Large
+#&gt; 2 097-U15P3-00    F - Public Utilities   F    Public Utilities       Large
+#&gt; 3 097-U15P3-00    F - Public Utilities   F    Public Utilities       Large
+#&gt; 4 097-U15P3-00    F - Public Utilities   F    Public Utilities       Small
+#&gt; 5 097-U15P3-00 B - Protective Measures   B Protective Measures       Small
+#&gt;   county countyCode   state stateCode stateNumberCode projectAmount
+#&gt; 1 Mobile         97 Alabama        AL               1          0.00
+#&gt; 2 Mobile         97 Alabama        AL               1      58425.34
+#&gt; 3 Mobile         97 Alabama        AL               1          0.00
+#&gt; 4 Mobile         97 Alabama        AL               1      12778.47
+#&gt; 5 Mobile         97 Alabama        AL               1      15290.26
+#&gt;   federalShareObligated totalObligated       obligatedDate
+#&gt; 1                  0.00           0.00 2010-01-28 03:33:40
+#&gt; 2              43819.01       43819.01 2010-01-28 03:33:40
+#&gt; 3                  0.00           0.00 2010-01-28 03:33:40
+#&gt; 4               9583.85        9583.85 2010-01-28 03:33:40
+#&gt; 5              11467.70       11467.70 2010-01-28 03:33:40
+#&gt;                               hash         lastRefresh                       id
+#&gt; 1 31ce5206bca27f03ed8f35a8a42ec896 2020-06-15 11:33:48 5ee75c9c556129600ddb60c3
+#&gt; 2 2208b99d98f3ad0858e5bfe615c63ccc 2020-06-15 11:33:48 5ee75c9c556129600ddb60c4
+#&gt; 3 a60cf74f0c30e90dc5eadceb0512307e 2020-06-15 11:33:48 5ee75c9c556129600ddb60c5
+#&gt; 4 81e4c0dcd9873684e927069be0274394 2020-06-15 11:33:48 5ee75c9c556129600ddb60c6
+#&gt; 5 2296b207e4b3118ec6a8ded1f11dcfd3 2020-06-15 11:33:48 5ee75c9c556129600ddb60c7
+#&gt;   beginyear fips
+#&gt; 1      2009 1097
+#&gt; 2      2009 1097
+#&gt; 3      2009 1097
+#&gt; 4      2009 1097
+#&gt; 5      2009 1097</code></pre>
 </section></section>
-<section><section id="eda" class="title-slide slide level1"><h1>EDA</h1><p>-Total Project Amount for Each State</p>
-<p>-Total Project Amount for Each Year</p>
-<p>-Total Project Amount for Different Project Size</p>
-<p>-Total Project Amount for Different Damage Categories</p></section><section id="total-project-amount-for-each-state" class="slide level2">
+<section><section id="eda" class="title-slide slide level1"><h1>EDA</h1><ul>
+<li><p>Total Project Amount for Each State</p></li>
+<li><p>Total Project Amount for Each Year</p></li>
+<li><p>Total Project Amount for Different Project Size</p></li>
+<li><p>Total Project Amount for Different Damage Categories</p></li>
+</ul></section><section id="total-project-amount-for-each-state" class="slide level2">
 <h2>Total Project Amount for Each State</h2>
 <div style="font-size:10pt; font-weight: bold">
 <p><img src="slide_files/figure-revealjs/unnamed-chunk-3-1.png" width="90%" style="display: block; margin: auto;" /></p>
@@ -526,7 +541,7 @@ document.getElementsByTagName('head')[0].appendChild(style);
 <li><p>Combine Maps Data with data we want to draw.</p></li>
 </ol></section><section id="maps-of-states" class="slide level2">
 <h2>Maps of States</h2>
-<div style="font-size:12pt">
+<div style="font-size:18pt">
 <p>
 We draw the total cost of every state in map.
 </p>
@@ -538,7 +553,7 @@ As shown in the picture, hurricanes mainly influence the east coast. New York ha
 </div>
 </section><section id="maps-of-counties" class="slide level2">
 <h2>Maps of Counties</h2>
-<div style="font-size:15pt">
+<div style="font-size:20pt">
 
 <p>If we put the top 10 counties with the largest estimated total cost in the same graph with other counties, the differences among counties will be hard to find.<br />
 So we draw the top 10 counties alone and it appears that they are still hard to find in map because of their tiny area.</p>
@@ -671,7 +686,7 @@ florida,broward
 </div>
 </section><section class="slide level2">
 
-<div style="font-size:15pt">
+<div style="font-size:20pt">
 <p>And the rest counties are drawn in this map:</p>
 <p><img src="slide_files/figure-revealjs/unnamed-chunk-10-1.png" width="90%" style="display: block; margin: auto;" /> <a href="https://yuzhe.shinyapps.io/MA615-midtermmap/">go to shiny app see more information.</a></p>
 </div>
